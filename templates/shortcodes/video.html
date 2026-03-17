@@ -1,0 +1,10 @@
+<figure>
+  <video controls preload="metadata" style="width:100%;height:auto;">
+    <source src="{{ src }}" type="{{ type | default(value='video/mp4') }}">
+    <p>Your browser doesn't support HTML5 video.
+       <a href="{{ src }}">Download the video</a> instead.</p>
+  </video>
+  {% if caption %}
+  <figcaption>{{ caption | markdown(inline=true) | safe }}</figcaption>
+  {% endif %}
+</figure>
