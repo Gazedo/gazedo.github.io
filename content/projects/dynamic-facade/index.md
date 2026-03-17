@@ -1,4 +1,5 @@
 +++
+template = "post.html"
 title = "Dynamic Facade"
 description = "ESP8266-controlled motorised window blind system with Android app and SPIFFS-backed configuration."
 date = 2019-12-04

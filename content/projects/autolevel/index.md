@@ -1,4 +1,5 @@
 +++
+template = "post.html"
 title = "RV Auto-Leveling System"
 description = "Designing an automatic hydraulic leveling controller for an RV using an IMU, ESP32, and Zephyr RTOS."
 date = 2020-09-12

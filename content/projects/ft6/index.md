@@ -1,4 +1,5 @@
 +++
+template = "post.html"
 title = "Folgertech FT6 Upgrades"
 description = "Hotend replacement and CoreXY motion system conversion on a large-format 3D printer."
 date = 2020-08-20
@@ -12,6 +13,7 @@ lang = "en"
 toc = true
 copy = true
 comment = false
+math = true
 +++
 
 ## Hotend Replacement

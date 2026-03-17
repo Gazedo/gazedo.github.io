@@ -1,4 +1,5 @@
 +++
+template = "post.html"
 title = "3D Printed Bucket Handle"
 description = "Designing, iterating, and manufacturing a TPU snap-on replacement handle for standard 5-gallon buckets."
 date = 2020-06-01
