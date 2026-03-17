@@ -20,6 +20,6 @@ jobs:
           fetch-depth: 0
 
       - name: Build & deploy with Zola
-        uses: shalzz/zola-deploy-action@v0.19.2
+        uses: shalzz/zola-deploy-action@v0.22.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
