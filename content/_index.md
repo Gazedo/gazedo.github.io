@@ -26,7 +26,8 @@ date_format = "%b %-d, %Y"
 +++
 
 Embedded systems engineer with a background in hardware bring-up, firmware, and low-power design.
-Currently building [KindleSense](/projects/kindlesense) — a solar-powered LoRa sensor network for
-wildfire early warning, targeting the fire weather metrics land managers actually use.
-
 Interested in climate tech, environmental sensing, and applying embedded systems to problems that matter.
+
+## Projects
+
+{{ collection(file="projects/projects.toml") }}
