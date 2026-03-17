@@ -51,7 +51,7 @@ The controller can also save its current settings to the SPIFFS filesystem. This
 
 Once a destination is set, the motion planner takes control — called on every update, it returns the next desired position for each individual servo. This is a simple step motion planner that takes advantage of the built-in servo acceleration. Once all servos have reached their destination the run state variable switches to false, which tells the main program oscillation logic when to start timers if oscillation is turned on:
 
-{{ video(src="fast_move.MP4", caption="Oscillation mode running on all 8 servos") }}
+{{ video(src="fast_move.mp4", caption="Oscillation mode running on all 8 servos") }}
 
 ---
 
