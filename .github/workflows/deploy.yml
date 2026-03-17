@@ -1,0 +1,25 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write      # needed by zola-deploy-action to push to gh-pages branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true   # pulls in themes/serene
+          fetch-depth: 0
+
+      - name: Build & deploy with Zola
+        uses: shalzz/zola-deploy-action@v0.19.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
