@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="Solar-powered LoRa sensor network for wildfire early warning">
+
+  <title>FlintMesh</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://gazedo.github.io/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://gazedo.github.io/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://gazedo.github.io/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://gazedo.github.io/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/giallo-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://gazedo.github.io/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#motivation">Motivation</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#goals">Goals</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#architecture">Architecture</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#mesh-routing">Mesh Routing</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#packet-format">Packet format</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#hardware">Hardware</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#development-heltec-wifi-lora-32-v2">Development — Heltec WiFi LoRa 32 V2</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#production-node-m5stack-stamp-c3u">Production Node — M5Stack Stamp-C3U</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#firmware-stack">Firmware Stack</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#bring-up-sequence">Bring-up Sequence</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#bring-up-notes">Bring-up Notes</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#crate-structure">Crate Structure</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>FlintMesh</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Mar 18, 2026</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://gazedo.github.io/tags/claude"><span>#</span>claude</a><a class="instant" href="https://gazedo.github.io/tags/rust"><span>#</span>rust</a><a class="instant" href="https://gazedo.github.io/tags/embedded"><span>#</span>embedded</a><a class="instant" href="https://gazedo.github.io/tags/lora"><span>#</span>lora</a><a class="instant" href="https://gazedo.github.io/tags/esp32"><span>#</span>esp32</a><a class="instant" href="https://gazedo.github.io/tags/embassy"><span>#</span>embassy</a><a class="instant" href="https://gazedo.github.io/tags/climate"><span>#</span>climate</a><a class="instant" href="https://gazedo.github.io/tags/sensors"><span>#</span>sensors</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <p>A distributed, solar-powered LoRa sensor network measuring fire-weather conditions in real time.
+Dual purpose: a path into climate tech roles, and an eventually-deployable tool for land managers.</p>
+<blockquote>
+<p><strong>Status:</strong> LoRa bring-up complete — full Rust TX/RX working end-to-end on two Heltec V2 boards.
+Sensor integration next.
+<a rel="noopener nofollow noreferrer external" target="_blank" href="https://github.com/gazedo/FlintMesh">View source on GitHub</a></p>
+</blockquote>
+<hr />
+<h2 id="motivation">Motivation</h2>
+<p>Wildfire behaviour is driven by measurable environmental conditions — air temperature, relative
+humidity, wind speed and direction, and the moisture content of dead fuels like leaf litter and
+duff.  Professional fire weather frameworks (FWI, NFDRS) turn these into actionable indices that
+fire agencies use for suppression planning and prescribed burn windows.</p>
+<p>The problem: in remote or roadless terrain, continuous sensor coverage is expensive and
+infrastructure-limited.  Cellular-connected weather stations cost thousands of dollars per node.
+Battery-powered nodes die quickly.  Solar-powered nodes work if the power budget is right.</p>
+<p>LoRa (Long Range radio) enables kilometre-scale wireless links at milliwatt power levels, making
+it the correct answer for data-scarce terrain without cellular or grid.  A node that wakes every
+60–300 seconds, takes readings, transmits a 20-byte packet, and sleeps again can run indefinitely
+on a small solar panel and LiPo cell.</p>
+<hr />
+<h2 id="goals">Goals</h2>
+<ul>
+<li><strong>Primary:</strong> portfolio artefact demonstrating prototype-to-production embedded Rust on real
+hardware, for climate tech job applications.</li>
+<li><strong>Secondary:</strong> real-world deployment — nodes feeding a public Grafana dashboard and optionally
+the Synoptic Data / Weather Underground PWS APIs used by fire agencies.</li>
+<li><strong>Stretch:</strong> interop with the <a rel="noopener nofollow noreferrer external" target="_blank" href="https://meshtastic.org">Meshtastic</a> mesh network so nodes can
+relay data through existing community infrastructure.</li>
+</ul>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<pre class="mermaid">
+  flowchart LR
+    subgraph Node[&quot;Sensor Node (flint-node)&quot;]
+        S[SHT40\nTemp&#x2F;Humidity] --&gt; MCU
+        W[Anemometer\nWind] --&gt; MCU
+        F[Dowel Probe\nFuel Moisture] --&gt; MCU
+        B[MAX17048\nBattery SOC] --&gt; MCU
+        MCU[ESP32\nEmbassy async]
+        MCU --&gt; LR1[SX1276\nLoRa TX]
+    end
+
+    subgraph Mesh[&quot;LoRa Mesh&quot;]
+        LR1 --&gt;|flood routing\nhop limit 3| LR2[Relay Node\nflint-debug]
+        LR2 --&gt;|rebroadcast| LR3[More relays...]
+    end
+
+    subgraph GW[&quot;Gateway (flint-gateway)&quot;]
+        LR3 --&gt; RX[LoRa RX\nHeltec V2]
+        RX --&gt; RPi[Raspberry Pi]
+        RPi --&gt; IDB[(InfluxDB)]
+        IDB --&gt; Graf[Grafana\nPublic Dashboard]
+    end
+</pre>
+<hr />
+<h2 id="mesh-routing">Mesh Routing</h2>
+<p>The network uses <strong>flood routing with hop-limit deduplication</strong> — the same semantics as
+Meshtastic.  Any node that receives a packet it hasn't seen before (tracked by a 64-entry
+ring cache of packet IDs) and whose <code>hop_limit &gt; 0</code> will decrement the limit and rebroadcast.
+This gives roughly 4-hop coverage from any origin with the default limit of 3.</p>
+<p>The shared <code>flint-proto</code> crate defines the wire format and routing logic, so embedded nodes and
+the Raspberry Pi gateway always agree without duplicating code.</p>
+<h3 id="packet-format">Packet format</h3>
+<p>Packets are <a rel="noopener nofollow noreferrer external" target="_blank" href="https://github.com/jamesmunns/postcard">postcard</a>-encoded — compact, <code>no_std</code>
+compatible, and deterministic.  A full sensor reading fits in ~22 bytes.</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>MeshEnvelope {</span></span>
+<span class="giallo-l"><span>    from:       u32   // node ID — lower 4 bytes of MAC</span></span>
+<span class="giallo-l"><span>    to:         u32   // 0xFFFFFFFF = broadcast</span></span>
+<span class="giallo-l"><span>    packet_id:  u32   // random, used for dedup</span></span>
+<span class="giallo-l"><span>    hop_limit:  u8    // decremented on each relay (default 3)</span></span>
+<span class="giallo-l"><span>    hop_start:  u8    // original hop_limit</span></span>
+<span class="giallo-l"><span>    payload:    SensorReading {</span></span>
+<span class="giallo-l"><span>        node_id, temp_c (×100), humidity_pct,</span></span>
+<span class="giallo-l"><span>        wind_speed_ms (×2), wind_dir_deg,</span></span>
+<span class="giallo-l"><span>        fuel_moisture, battery_soc, battery_mv, sequence</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<hr />
+<h2 id="hardware">Hardware</h2>
+<h3 id="development-heltec-wifi-lora-32-v2">Development — Heltec WiFi LoRa 32 V2</h3>
+<p>Both firmware crates currently target the Heltec V2: ESP32 + SX1276 + 128×64 OLED on one board.
+Two boards are in use — one running <code>flint-node</code> (TX), one running <code>flint-debug</code> (RX + relay) —
+giving a complete end-to-end link to develop against before any custom hardware is needed.</p>
+<h3 id="production-node-m5stack-stamp-c3u">Production Node — M5Stack Stamp-C3U</h3>
+<table><thead><tr><th>Item</th><th>Notes</th></tr></thead><tbody>
+<tr><td>M5Stack Stamp-C3U</td><td>ESP32-C3 RISC-V, ~5 µA deep sleep</td></tr>
+<tr><td>SX1276</td><td>Harvested from spare Heltec V2 boards</td></tr>
+<tr><td>MAX17048</td><td>I2C fuel gauge, accurate SOC without ADC noise</td></tr>
+<tr><td>TP4056 + Schottky</td><td>LiPo charge with load-sharing</td></tr>
+<tr><td>SHT40</td><td>Temp + humidity, I2C 0x44</td></tr>
+<tr><td>5–6 V solar panel</td><td>~8 USD</td></tr>
+<tr><td>18650 cell</td><td></td></tr>
+<tr><td>3D-printed enclosure</td><td>Weatherproof, printed in-house</td></tr>
+</tbody></table>
+<p>The ESP32-C3's ~5 µA deep sleep (vs ~800 µA on the Heltec V2) is what makes the solar budget
+viable long-term.  A custom KiCad PCB integrating these components is planned for Phase 1.</p>
+<hr />
+<h2 id="firmware-stack">Firmware Stack</h2>
+<ul>
+<li><strong>Runtime:</strong> <a rel="noopener nofollow noreferrer external" target="_blank" href="https://embassy.dev">Embassy</a> async executor via <code>esp-rtos</code></li>
+<li><strong>HAL:</strong> <code>esp-hal</code> 1.0</li>
+<li><strong>Radio:</strong> <code>lora-phy</code> 3 — async SX127x driver via <code>embedded-hal-async</code></li>
+<li><strong>Serialization:</strong> <code>postcard</code> — <code>no_std</code>, no dynamic allocation</li>
+<li><strong>Display:</strong> <code>ssd1306</code> + <code>embedded-graphics</code> — boot screen and live packet counter on the OLED</li>
+<li><strong>Logging:</strong> <code>log</code> crate via <code>esp-println</code> — plain UART text, visible in <code>espflash --monitor</code></li>
+<li><strong>Power:</strong> adaptive sleep strategy keyed on battery SOC
+(Active ≥50% → LightSleep ≥20% → DeepSleep &lt;20%)</li>
+</ul>
+<hr />
+<h2 id="bring-up-sequence">Bring-up Sequence</h2>
+<table><thead><tr><th>Step</th><th>Status</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Arduino loopback</td><td>✅</td><td>Confirmed RF link on two Heltec V2 boards</td></tr>
+<tr><td>Rust RX ↔ Arduino TX</td><td>✅</td><td><code>flint-debug</code> receiving from factory firmware; validated <code>lora-phy</code> modem config</td></tr>
+<tr><td>Full Rust both sides</td><td>✅</td><td><code>flint-node</code> TX and <code>flint-debug</code> RX passing <code>MeshEnvelope</code> packets end-to-end</td></tr>
+<tr><td>Sensor integration</td><td>🔄</td><td>Fuel moisture (ADC resistive dowel) first, then SHT40 + MAX17048</td></tr>
+<tr><td>Anemometer</td><td>⬜</td><td>GPIO interrupt pulse counting</td></tr>
+<tr><td>RPi gateway</td><td>⬜</td><td><code>flint-gateway</code> → InfluxDB → Grafana</td></tr>
+<tr><td>Custom PCB</td><td>⬜</td><td>KiCad schematic + layout, fabricate at JLCPCB</td></tr>
+</tbody></table>
+<hr />
+<h2 id="bring-up-notes">Bring-up Notes</h2>
+<p>A few things worth documenting from the LoRa bring-up that weren't obvious upfront.</p>
+<p><strong>Xtensa toolchain pinning</strong></p>
+<p>The ESP32 uses Xtensa, which isn't in upstream Rust — Espressif maintains a fork.
+The <code>esp</code> toolchain needs to be pinned via <code>rust-toolchain.toml</code> at the workspace root,
+otherwise <code>cargo</code> defaults to stable and fails to compile anything that touches the HAL.
+Once pinned, <code>build-std = ["core"]</code> in <code>.cargo/config.toml</code> builds <code>core</code> from the bundled
+Xtensa-aware source and everything works.</p>
+<p><strong><code>RxMode::Single(0)</code> is a near-zero timeout</strong></p>
+<p><code>lora-phy</code>'s <code>RxMode::Single(n)</code> sets the SX127x symbol timeout register — the number of
+symbols the radio waits before declaring no packet arrived.  Passing <code>0</code> clamps to the
+hardware minimum of 4 symbols.  At SF7/BW125 a symbol is ~1 ms, so the radio was open for
+~4 ms before closing again.  The receive loop was churning thousands of times per second and
+almost never catching a packet.  Switching to <code>RxMode::Continuous</code> keeps the radio open until
+DIO0 fires on a real reception.</p>
+<p><strong><code>defmt</code> over UART needs <code>esp-println</code>'s <code>defmt-espflash</code> feature and <code>--log-format defmt</code></strong></p>
+<p><code>defmt-rtt</code> requires a debug probe to view output — <code>espflash --monitor</code> reads UART, not RTT.
+The <code>defmt-espflash</code> feature in <code>esp-println</code> routes defmt through UART with rzcobs encoding,
+and espflash decodes it with <code>--log-format defmt</code>.  In practice this pipeline has enough moving
+parts (ELF symbol lookup, frame detection, encoding version) that the simpler <code>log-04</code> feature
+with plain <code>log::info!</code> macros is more reliable for a bring-up phase where you just need to see
+text in a terminal.</p>
+<hr />
+<h2 id="crate-structure">Crate Structure</h2>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>FlintMesh/</span></span>
+<span class="giallo-l"><span>├── flint-proto/    # shared packet types + mesh routing (no_std)</span></span>
+<span class="giallo-l"><span>├── flint-debug/    # LoRa RX + relay firmware — Heltec V2</span></span>
+<span class="giallo-l"><span>├── flint-node/     # sensor node firmware — Heltec V2 (TX test, sensors in progress)</span></span>
+<span class="giallo-l"><span>└── flint-gateway/  # RPi gateway + InfluxDB writer  (planned)</span></span></code></pre>
+      </article>
+
+      
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2025 Hayden Connor
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+    
+      
+    
+    
+    <a id="rss-btn" href="https://gazedo.github.io/posts/feed.xml">RSS</a>
+    
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+
+<dialog id="rss-mask">
+  <div>
+    <a href="https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts&#x2F;feed.xml">https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts&#x2F;feed.xml</a>
+    
+    
+    <button autofocus aria-label="copy" data-link="https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts&#x2F;feed.xml" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z" fill="currentColor"></path></svg>
+
+    </button>
+  </div>
+</dialog>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://gazedo.github.io/js/main.js"></script>
+</body>
+
+</html>

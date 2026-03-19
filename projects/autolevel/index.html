@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="Designing an automatic hydraulic leveling controller for an RV using an IMU, ESP32, and Zephyr RTOS.">
+
+  <title>RV Auto-Leveling System</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://gazedo.github.io/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://gazedo.github.io/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://gazedo.github.io/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://gazedo.github.io/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/giallo-light.css" />
+
+
+
+  
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://gazedo.github.io/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#brainstorm">Brainstorm</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#hardware">Hardware</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#operation">Operation</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#software-framework">Software Framework</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#algorithm">Algorithm</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#the-problem">The Problem</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#actuating-the-system">Actuating the System</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#implementation">Implementation</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#program-architecture">Program Architecture</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#threads">Threads</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#testing">Testing</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>RV Auto-Leveling System</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Sep 12, 2020</span>
+            </div>
+
+          
+          <div id="tags">
+            <a class="instant" href="https://gazedo.github.io/tags/esp32"><span>#</span>esp32</a><a class="instant" href="https://gazedo.github.io/tags/zephyr"><span>#</span>zephyr</a><a class="instant" href="https://gazedo.github.io/tags/embedded"><span>#</span>embedded</a><a class="instant" href="https://gazedo.github.io/tags/cpp"><span>#</span>cpp</a>
+          </div>
+          
+        </div>
+
+        
+        
+
+        
+
+        <h2 id="brainstorm">Brainstorm</h2>
+<p>The existing system in the RV is very simple: four switches, three of which actuate the cylinders up and down and the last turns the pump on or off. The cylinders are located at the front, rear left, and rear right. The standard leveling method is to actuate the front first to bring it slightly above the rear, then use the last two to bring the rear up to meet the front while staying level side to side.</p>
+<h3 id="hardware">Hardware</h3>
+<p>The minimum feedback required from the physical world: a couple of control inputs, the direction of gravity, and a voltage converter. Optionally, cylinder extension sensors could enable a more advanced system.</p>
+<p>Going with the minimum would result in a simple add-in box installed in the dash, containing an IMU, the main processor, and leading to four buttons:</p>
+<ol>
+<li>Activate the system</li>
+<li>Activate the front-to-back leveling routine</li>
+<li>Activate the side-to-side routine</li>
+<li><strong>Safe</strong> — retracts cylinders for the maximum expected retract time from greatest extension. Until the cylinders retract fully the system safes the ignition and prevents the engine from starting.</li>
+</ol>
+<p>Adding cylinder extension meters would allow the safe to release earlier by watching the cylinders, and would also catch a cylinder failure to retract.</p>
+<h3 id="operation">Operation</h3>
+<p>When the RV is stopped and the auto-leveling system is enabled:</p>
+<ol>
+<li>Run the front-to-back routine until the system stops actuating the front cylinder.</li>
+<li>Run the side-to-side routine until the system stops actuating the cylinders.</li>
+<li>Rerun front-to-back to ensure the RV is levelled front to back.</li>
+<li>Go outside and confirm cylinders are touching the ground.</li>
+</ol>
+<p>To leave: hold the Safe button until the red LED turns off.</p>
+<h3 id="software-framework">Software Framework</h3>
+<p>I have yet to have a good project to use Zephyr with but this seems like an ideal candidate. I need something easily transferable across hardware, based on a growing industry standard, and easily updatable. Zephyr ticks all of these boxes and also has the option of working through PlatformIO in VS Code.</p>
+<hr />
+<h2 id="algorithm">Algorithm</h2>
+<h3 id="the-problem">The Problem</h3>
+<p>For the auto-leveling routines to work, the program needs to know the error it must correct. The error is calculated by taking the input from an IMU (MPU6050) and subtracting a set point to allow for calibration after installation.</p>
+<p>Initially I was planning on calculating vector angles so the math would be expandable into directly calculating ideal cylinder lengths if I eventually added extension sensors. I was looking up methods to find vector angles using matrix operations and infinite series when I realised I didn't need to — the Zephyr driver directly gives X, Y, and Z accelerations, so I just need to minimise the error in X and Y directions.</p>
+<p>Example IMU reading:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>accel -5.882554  -6.485893  4.415782 m/s/s</span></span></code></pre>
+<p>The front-to-back routine needs to run until -5.882554 is closer to 0, and the side-to-side routine needs to zero out -6.485893, assuming set point 0, 0, 9.80665 m/s/s. The system also checks that the IMU is at rest — the vector magnitude should total approximately gravity (9.80665 m/s/s) within a configurable deadband.</p>
+<h3 id="actuating-the-system">Actuating the System</h3>
+<p>The system uses GPIO to bind 4 buttons to functions controlling program execution.</p>
+<p>For anything to happen the main switch must be actuated, enabling the hydraulic motor to turn on when a cylinder is moving down. Without this switch the system does nothing as a safety measure. The system waits 1 second after a button press to filter accidental pushes. While the system is operating the corresponding button must be held for the entirety of the operation.</p>
+<hr />
+<h2 id="implementation">Implementation</h2>
+<h3 id="program-architecture">Program Architecture</h3>
+<figure>
+    <img
+        src="LevelingSystemFlow.png"
+         alt="Flow chart of system"
+        
+        
+    >
+    
+</figure>
+<p>Holding the buttons triggers the appropriate actions through a state machine that detects when a button is being held and communicates to the motion-handling threads that they should act.</p>
+<p>The non-volatile data issue is solved using a configuration file saved in the SPIFFS subsystem of the target ESP32. The file supports a version number to check compatibility before attempting to import attributes — without a version number the program can segfault while trying to import a non-existent setting. The file is saved in JSON, which is both easy to parse and fairly easy to read.</p>
+<h3 id="threads">Threads</h3>
+<p>The program runs with 4 threads:</p>
+<table><thead><tr><th>Thread</th><th>Responsibility</th></tr></thead><tbody>
+<tr><td>Limit Checker</td><td>Watches for travel limits and faults</td></tr>
+<tr><td>Button Watcher</td><td>Detects holds and communicates state changes</td></tr>
+<tr><td>LED Controller</td><td>Drives status indicators</td></tr>
+<tr><td>IMU Reader</td><td>Reads acceleration data; allowed to run on either core</td></tr>
+</tbody></table>
+<p>A fifth thread runs in diagnosis mode, outputting the internal state machine, IMU output, and button state. Each thread runs with ~4 KB of stack space; all are pinned to core 1 except the IMU task.</p>
+<h3 id="testing">Testing</h3>
+<p>Testing on the actual RV system was not possible, so I built a test rig that shows outputs on LEDs and provides buttons to interact with the controller, with diagnostic output displaying on a laptop.</p>
+
+      </article>
+
+      
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      © 2025 Hayden Connor
+      
+      <span>|</span>
+      Built with <a href="https://www.getzola.org" rel="noreferrer" target="_blank">zola</a> and <a href="https://github.com/isunjn/serene" rel="noreferrer" target="_blank">serene</a>
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+    
+      
+    
+    
+    <a id="rss-btn" href="https://gazedo.github.io/posts/feed.xml">RSS</a>
+    
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+
+<dialog id="rss-mask">
+  <div>
+    <a href="https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts&#x2F;feed.xml">https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts&#x2F;feed.xml</a>
+    
+    
+    <button autofocus aria-label="copy" data-link="https:&#x2F;&#x2F;gazedo.github.io&#x2F;posts&#x2F;feed.xml" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z" fill="currentColor"></path></svg>
+
+    </button>
+  </div>
+</dialog>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+
+  <script src="https://gazedo.github.io/js/main.js"></script>
+</body>
+
+</html>

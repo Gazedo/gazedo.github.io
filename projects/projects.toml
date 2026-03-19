@@ -1,0 +1,45 @@
+[[collection]]
+type = "card"
+title = "FlintMesh"
+subtitle = "Wildfire Early Warning Sensor Network"
+date = "2025 – present"
+link = "/projects/flintmesh"
+content = "Distributed solar-powered LoRa sensor network measuring fire-weather conditions in real time. Embassy async Rust firmware on ESP32 nodes, flood-mesh routing, and a Raspberry Pi gateway feeding InfluxDB + Grafana. Data output targets the FWI and NFDRS frameworks used by fire agencies."
+tags = ["rust", "embedded", "lora", "esp32", "embassy", "climate"]
+featured = true
+
+[[collection]]
+type = "card"
+title = "RV Auto-Leveling System"
+subtitle = "Automatic hydraulic leveling controller"
+date = "2020 – 2021"
+link = "/projects/autolevel"
+content = "Automatic hydraulic leveling controller for an RV using an IMU, ESP32, and Zephyr RTOS. Four-button interface with a state machine, SPIFFS-backed config, and a safe-before-drive interlock."
+tags = ["esp32", "zephyr", "embedded", "cpp"]
+
+[[collection]]
+type = "card"
+title = "Dynamic Facade"
+subtitle = "ESP8266 motorised blind controller"
+date = "2019 – 2020"
+link = "/projects/dynamic-facade"
+content = "ESP8266-controlled system for individually actuating 8 window blind servos via an Android app. HTTP server with SPIFFS-backed config, motion planner, and oscillation mode."
+tags = ["esp8266", "embedded", "arduino"]
+
+[[collection]]
+type = "card"
+title = "3D Printed Bucket Handle"
+subtitle = "TPU snap-on ergonomic handle"
+date = "2020"
+link = "/projects/bucket-handle"
+content = "Ergonomic TPU replacement handle for standard 5-gallon buckets. Iterated from solid infill through bicycle-spoke internal structure to optimise comfort and durability under load."
+tags = ["3d printing", "product design", "tpu"]
+
+[[collection]]
+type = "card"
+title = "Folgertech FT6 Upgrades"
+subtitle = "Hotend replacement and CoreXY conversion"
+date = "2020"
+link = "/projects/ft6"
+content = "Upgraded a large-format FT6 3D printer from a failing stock hotend to a BMG + E3D Volcano direct drive setup, then converted the motion system to CoreXY with LDO steppers to reduce moving mass and ghosting."
+tags = ["3d printing", "3d design", "hardware"]
