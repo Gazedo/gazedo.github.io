@@ -1,9 +1,9 @@
 [[collection]]
 type = "card"
-title = "KindleSense"
+title = "FlintMesh"
 subtitle = "Wildfire Early Warning Sensor Network"
 date = "2025 – present"
-link = "/projects/kindlesense"
+link = "/projects/flintmesh"
 content = "Distributed solar-powered LoRa sensor network measuring fire-weather conditions in real time. Embassy async Rust firmware on ESP32 nodes, flood-mesh routing, and a Raspberry Pi gateway feeding InfluxDB + Grafana. Data output targets the FWI and NFDRS frameworks used by fire agencies."
 tags = ["rust", "embedded", "lora", "esp32", "embassy", "climate"]
 featured = true
